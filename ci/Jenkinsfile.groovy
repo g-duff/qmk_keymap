@@ -1,15 +1,31 @@
+String QMK_VERSION = '0.21.6'
+
 pipeline {
-    agent {
-        docker {
-		image 'ghcr.io/qmk/qmk_cli'
-        	args '--rm --user 1000:1000 -w /qmk_firmware -v ./qmk_firmware:/qmk_firmware -e ALT_GET_KEYBOARDS=true -e SKIP_GIT= -e MAKEFLAGS='
-	}
-    }
+    
+    agent none
+    
     stages {
-        stage('Docker test') {
+
+        stage('Clone QMK') {
+            agent {
+                label 'main'
+            }
             steps {
-	            sh '''make crkbd:via'''
+                sh "git clone --depth 1 --branch ${QMK_VERSION} https://github.com/qmk/qmk_firmware.git"
             }
         }
+
+        stage('Build Firmware') {
+            agent {
+                docker {
+                    image 'ghcr.io/qmk/qmk_cli'
+                    args '-w /qmk_firmware -v ./qmk_firmware:/qmk_firmware'
+                }
+            }
+            steps {
+                sh 'cd qmk_firmware && make crkbd:via'
+            }
+        }
+
     }
 }
