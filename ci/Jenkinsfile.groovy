@@ -1,7 +1,7 @@
 String QMK_VERSION = '0.21.6'
 
 pipeline {
-    
+
     agent none
     
     stages {
@@ -14,7 +14,6 @@ pipeline {
                 sh "git clone --depth 1 --branch ${QMK_VERSION} https://github.com/qmk/qmk_firmware.git"
             }
         }
-
         stage('Build Firmware') {
             agent {
                 docker {
@@ -26,6 +25,13 @@ pipeline {
                 sh 'cd qmk_firmware && make crkbd:via'
             }
         }
-
+    }
+    post {
+        cleanup {
+            node('main') {
+                archiveArtifacts artifacts: 'qmk_firmware/*.hex'
+                sh 'rm -rf ./qmk_firmware'
+            }
+        }
     }
 }
