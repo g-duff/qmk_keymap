@@ -5,7 +5,6 @@ pipeline {
     agent none
     
     stages {
-
         stage('Clone QMK') {
             agent {
                 label 'main'
@@ -18,19 +17,25 @@ pipeline {
             agent {
                 docker {
                     image 'ghcr.io/qmk/qmk_cli'
-                    args '-w /qmk_firmware -v ./qmk_firmware:/qmk_firmware'
+                    args '--volume ./qmk_firmware:/qmk_firmware'
                 }
             }
             steps {
-                sh 'cd qmk_firmware && make crkbd:via'
+                dir('qmk_firmware') {
+                    sh 'make crkbd:via'
+                }
             }
         }
     }
     post {
-        cleanup {
+        always {
             node('main') {
                 archiveArtifacts artifacts: 'qmk_firmware/*.hex'
-                sh 'rm -rf ./qmk_firmware'
+            }
+        }
+        cleanup {
+            node('main') {
+                deleteDir()
             }
         }
     }
